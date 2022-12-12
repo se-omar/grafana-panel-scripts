@@ -1,0 +1,320 @@
+<link rel="stylesheet" href="https://cdn.form.io/formiojs/formio.full.min.css" />
+<script src="https://cdn.form.io/formiojs/formio.full.min.js"></script>
+
+<style>
+    .form-control {
+        padding: 5px;
+        border: 0;
+        box-shadow: 0 0 15px 4px rgba(0, 0, 0, 0.05);
+        margin-top: 5px;
+        margin-bottom: 15px;
+        width: 100%;
+        
+    }
+    /* .form-control:focus {
+        border: solid 1px #1abc9c;
+        width: 50%;
+    } */
+    select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: solid 1px #1abc9c;
+    }
+
+    .workflow-btn {
+        margin-right: 5px;
+    }
+
+    /* The Modal (background) */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    /* Modal Content/Box */
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%; /* Could be more or less, depending on screen size */
+    }
+
+    /* The Close Button */
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>
+
+<div id="main">
+    <div id="buttons-container"></div>
+</div>
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <form>
+            <div style="width: 80%" id="formio"></div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        let apiKey = getIamToken();
+        console.log("api key is: ", apiKey);
+
+        let projectId = getProjectId();
+        console.log("projectId is: ", projectId);
+
+        let esIndex = getEsIndex(projectId);
+        console.log("indexName is: ", esIndex);
+
+        let documentTypes = getDocumentTypes(projectId, apiKey);
+        console.log("document types 2 is", documentTypes);
+
+        renderWorkflowButtons(documentTypes);
+        let formRes = {};
+
+        $(".workflow-btn").click(function () {
+            getForm(this.id);
+        });
+        // $("save-and-send").click(startWorkflow);
+
+        function getIamToken() {
+            let reqBody =
+                "client_id=3f7f6e60-ea48-4813-ba99-c42ba29d2dd7&client_secret=799a9e85-22ff-437d-8d8b-1f4782464791&scope=IdentityServerApi&grant_type=password&username=admin&password=P@$$w0rd";
+            let apiKey = "";
+
+            $.ajax({
+                async: false,
+                url: "http://localhost:8880/connect/token",
+                data: reqBody,
+                // contentType: "application/json",
+                dataType: "json",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                method: "POST",
+                success: function (data) {
+                    console.log(data);
+                    apiKey = "Bearer " + data["access_token"];
+                },
+                error: function (error) {
+                    alert(error);
+                },
+            });
+            return apiKey;
+        }
+
+        function getProjectId() {
+            let projectId = 0;
+
+            $.ajax({
+                async: false,
+                url: "http://localhost:8883/project/listprojects",
+                headers: {
+                    Authorization: apiKey,
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("all projects are: ", data);
+                    let projectName = sessionStorage.getItem("folderTitle");
+                    let project = data.find((o) => o.text === projectName);
+                    console.log("project is", project);
+                    projectId = project["id"];
+                },
+                error: function (error) {
+                    alert(error);
+                    return;
+                },
+            });
+            return projectId;
+        }
+
+        function getEsIndex(projectId) {
+            let esIndex = "";
+            $.ajax({
+                async: false,
+                url: "http://localhost:8883/project/getDetails?projectId=" + projectId,
+                headers: {
+                    Authorization: apiKey,
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("proj details is: ", data);
+                    esIndex = data["businessEntity"]["indexName"];
+                },
+                error: function (error) {
+                    alert(error);
+                    return;
+                },
+            });
+            return esIndex;
+        }
+
+        function getDocumentTypes(projectId, apiKey) {
+            let documentTypes = [];
+            $.ajax({
+                async: false,
+                url: "http://localhost:8886/api/listDocumentTypes?projectId=" + projectId,
+                headers: {
+                    Authorization: apiKey,
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("document types are: ", data);
+                    documentTypes = data;
+                },
+                error: function (error) {
+                    alert(error);
+                    return;
+                },
+            });
+            return documentTypes;
+        }
+
+        function renderWorkflowButtons(documentTypes) {
+            documentTypes.forEach((docType) => {
+                $("#buttons-container").append(
+                    `<button id='${docType["id"]}' class='workflow-btn btn btn-primary'>${docType["name"]}</button>`
+                );
+            });
+        }
+
+        function getForm(docTypeId) {
+            $.ajax({
+                async: false,
+                url: "http://localhost:8886/Api/GetForm?documentTypeId=" + docTypeId,
+                headers: {
+                    Authorization: apiKey,
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("data is", data);
+                    formRes = JSON.parse(data.formDesigner);
+                    console.log("form response is: ", formRes);
+                    formRes.components.push({
+                        type: "button",
+                        action: "submit",
+                        label: "Submit",
+                        theme: "primary",
+                    });
+                    Formio.icons = "fontawesome";
+                    Formio.createForm(document.getElementById("formio"), formRes).then(function (
+                        form
+                    ) {
+                        form.nosubmit = true;
+                        form.on("submit", function (submission) {
+                            delete submission.data["submit"];
+                            console.log("submission is: ", submission);
+                            startWorkflow(submission, esIndex, apiKey, docTypeId);
+                        });
+                    });
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+            });
+
+            $(this).hide();
+
+            $("#save-and-send").show();
+        }
+
+        function startWorkflow(submission, indexName, apiKey, documentTypeId) {
+            var selectedEmps = JSON.parse(sessionStorage.getItem("selectedRows"));
+            console.log("selectedddddddddddddd", selectedEmps);
+            if (sessionStorage.getItem("selectedRows") == "[]") {
+                alert("no employees were selected");
+                return;
+            }
+            console.log("selected emps: ", selectedEmps);
+            var fd = new FormData();
+            fd.set("DocumentTypeId", documentTypeId);
+            fd.append("FormData", JSON.stringify(submission.data));
+            fd.append("IndexName", indexName);
+            for (var i = 0; i < selectedEmps.length; i++) {
+                fd.append("DataIds", selectedEmps[i]);
+            }
+
+            console.log("data ids: ", ...fd);
+
+            $.ajax({
+                url: "http://localhost:8886/Api/StartWorkFlow",
+                data: fd,
+                headers: {
+                    Authorization: apiKey,
+                },
+                enctype: "multipart/form-data",
+                contentType: false,
+                method: "POST",
+                processData: false,
+                success: function (data) {
+                    alert(data);
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+            });
+        }
+
+        var modal = document.getElementById("myModal");
+
+        var mainView = document.getElementsByClassName("react-grid-layout");
+        // Get the button that opens the modal
+        var btns = document.getElementsByClassName("workflow-btn");
+        console.log("btns", btns);
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks on the button, open the modal
+        // btns[0].onclick = function () {
+        //     mainView[0].appendChild(modal);
+        //     modal.style.display = "block";
+        // };
+
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].onclick = function () {
+                console.log("clicked");
+                mainView[0].appendChild(modal);
+                modal.style.display = "block";
+            };
+        }
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
+
+        var inputs = document.getElementsByClassName("form-control");
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].classList.add("css-prp46w-input-input");
+        }
+    });
+</script>

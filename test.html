@@ -1,0 +1,44 @@
+<h1 id="h1tag">Employee Id is: ${tableData}</h1>
+<button id="omar">Trigger workflow</button>
+
+    <script
+        src="https://code.jquery.com/jquery-3.6.1.min.js"
+        integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+        crossorigin="anonymous"
+    ></script>
+
+<script>
+    $(document).ready(function() {
+      $("#omar").click(function() {
+              var selectedEmps = JSON.parse(sessionStorage.getItem("selectedRows"))
+              console.log("selected emps: ", selectedEmps)
+              var fd = new FormData();
+              fd.set('DocumentTypeId', 11);
+              fd.append('FormData', `{"fileName":${JSON.stringify(selectedEmps)}}`);
+              fd.append('IndexName', 'da440e0df4db4c2789ea8ab1efdb322c_')
+              for (var i = 0; i < selectedEmps.length; i++) {
+                fd.append('DataIds', selectedEmps[i])
+              }
+
+              console.log('data ids: ', ...fd)
+
+
+              $.ajax({
+                  url: "http://localhost:8886/Api/StartWorkFlow",
+                  data: fd,
+                  headers: {
+                      Authorization: "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IjMxQzhENjBDQjlDQjJBMzE3NDFFRkVCNDZBNTEyNUY3IiwidHlwIjoiYXQrand0In0.eyJuYmYiOjE2NzAzMTkzOTQsImV4cCI6MTY3MDM1NTM5NCwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4ODgwIiwiYXVkIjpbIklkZW50aXR5U2VydmVyQXBpIiwib2ZmbGluZV9hY2Nlc3MiXSwiY2xpZW50X2lkIjoiM2RhNmNkYWUtMzBmYy00MmE4LWJiMDYtMWUwY2ZjNDk1MTljIiwic3ViIjoiMSIsImF1dGhfdGltZSI6MTY2OTgwNzI0NCwiaWRwIjoibG9jYWwiLCJEaXNwbGF5TmFtZSI6IkFkbWluaXN0cmF0b3Igb21hciAiLCJMb2dpblByb3ZpZGVyVHlwZSI6MSwiRW1haWwiOiJhZG1pbkBldmVydGVhbS1ncy5jb20iLCJJZCI6MSwiRmlyc3ROYW1lIjoiQWRtaW5pc3RyYXRvciIsIkxhc3ROYW1lIjoib21hciAiLCJNaWRkbGVOYW1lIjoiIiwiU3RydWN0dXJlSWQiOiIiLCJNYW5hZ2VySWQiOiIiLCJTdHJ1Y3R1cmVJZHMiOiIiLCJHcm91cElkcyI6IiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluaXN0cmF0b3IiLCJBcHBsaWNhdGlvblJvbGVJZCI6IjEiLCJDbGllbnRzIjpbIntcIlJvbGVJZFwiOjEsXCJSb2xlXCI6XCJBZG1pbmlzdHJhdG9yXCIsXCJDbGllbnRJZFwiOlwiM2RhNmNkYWUtMzBmYy00MmE4LWJiMDYtMWUwY2ZjNDk1MTljXCJ9Iiwie1wiUm9sZUlkXCI6MSxcIlJvbGVcIjpcIkFkbWluaXN0cmF0b3JcIixcIkNsaWVudElkXCI6XCIzZjdmNmU2MC1lYTQ4LTQ4MTMtYmE5OS1jNDJiYTI5ZDJkZDdcIn0iLCJ7XCJSb2xlSWRcIjoxLFwiUm9sZVwiOlwiQWRtaW5pc3RyYXRvclwiLFwiQ2xpZW50SWRcIjpcImQ3OWViYmIwLWUzYjgtNGQyMC1hYTYwLTg1OWQyNmJhMmNhYVwifSJdLCJqdGkiOiJDNzQxQTdFNDU0MEMyQ0I2REE2RkVCRDQ4MDYwMkMwOSIsInNpZCI6Ijc2NjU3NTI0MkQyMkRFMkY3MkQyQzMxRjVFMkYwNDNCIiwiaWF0IjoxNjcwMzE5Mzk0LCJzY29wZSI6WyJvcGVuaWQiLCJJZGVudGl0eVNlcnZlckFwaSIsIm9mZmxpbmVfYWNjZXNzIl0sImFtciI6WyJwd2QiXX0.R3vWwtb_mS1Jkr0N83gclgA7VcDn5SyKiP7dySHhO8vjUflhipxoSFBbHE0bYPDso4yV9uVzG9cfJb9LOHCRYJin830vCfT9SsjnD3M8bfF0q09mUXjGEnD--dAyIx138DYJAuUpkbL8TiTdJ6L9Z-Iak7ibwLQqeJrrF7XjTZ_m86mpu9LLN2Q8bDcoiFYiXiTRMg_l2rOjonqRVrGb-68_Nq7z-EY4Qx66T8MkqfdMhIukG_KwaCvK3zwBDto2-hSt3KpxDhxow1lDkNwWIYqz3GgpKRQsClJMwmkroXwpFHI5FAW6EUXjIhsCPLYLZKkl46DutqqPosj7HXzksw",
+                  },
+                  enctype: "multipart/form-data",
+                  contentType: false,
+                  method: "POST",
+                  processData: false,
+                  success: function (data) {
+                      alert(data);
+                  },
+                  error: function (error) {
+                      console.log(error);
+                  },
+              });
+          });    })
+</script>

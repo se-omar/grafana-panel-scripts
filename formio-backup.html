@@ -1,0 +1,235 @@
+<link rel="stylesheet" href="https://cdn.form.io/formiojs/formio.full.min.css" />
+<script src="https://cdn.form.io/formiojs/formio.full.min.js"></script>
+
+<script
+    src="https://code.jquery.com/jquery-3.6.1.min.js"
+    integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+    crossorigin="anonymous"
+></script>
+
+<style>
+    input[type="text"],
+    select {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .workflow-btn {
+        margin-right: 5px
+    }
+</style>
+<div id="main">
+    <!-- <button class="btn btn-primary" id="get-form">Display Formio</button> -->
+    <div id="buttons-container">
+
+    </div>
+    <form>
+        <div style="width: 50%" id="formio"></div>
+        <!-- <button class="btn" id="save-and-send">Save And Send</button> -->
+    </form>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        let apiKey = getIamToken()
+        console.log("api key is: ", apiKey)
+
+        let projectId = getProjectId()
+        console.log("projectId is: ", projectId)
+
+        let esIndex = getEsIndex(projectId)
+        console.log("indexName is: ", esIndex)
+
+        let documentTypes = getDocumentTypes(projectId, apiKey)
+        console.log("document types 2 is", documentTypes)
+
+        renderWorkflowButtons(documentTypes)
+        let formRes = {};
+
+        $(".workflow-btn").click(function() {
+            getForm(this.id)
+        });
+        // $("save-and-send").click(startWorkflow);
+
+        function getIamToken() {
+           let reqBody =
+                "client_id=3f7f6e60-ea48-4813-ba99-c42ba29d2dd7&client_secret=799a9e85-22ff-437d-8d8b-1f4782464791&scope=IdentityServerApi&grant_type=password&username=admin&password=P@$$w0rd";
+            let apiKey = ""
+
+            $.ajax({
+                async: false,
+                url: "http://localhost:8880/connect/token",
+                data: reqBody,
+                // contentType: "application/json",
+                dataType: "json",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                method: "POST",
+                success: function (data) {
+                    console.log(data);
+                    apiKey =  "Bearer " + data["access_token"];
+                },
+                error: function (error) {
+                    alert(error);
+                },
+            });
+            return apiKey
+        }
+
+        function getProjectId() {
+            let projectId = 0;
+            
+            $.ajax({
+                async: false,
+                url: "http://localhost:8883/project/listprojects",
+                headers: {
+                    Authorization: apiKey
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("all projects are: ", data);
+                    let projectName = sessionStorage.getItem("folderTitle")
+                    let project = data.find(o => o.text === projectName);
+                    console.log("project is", project)
+                    projectId = project["id"]
+                },
+                error: function (error) {
+                    alert(error);
+                    return;
+                },
+            });
+            return projectId;
+        }
+
+        function getEsIndex(projectId) {
+            let esIndex = ""
+            $.ajax({
+                async: false,
+                url: "http://localhost:8883/project/getDetails?projectId=" + projectId,
+                headers: {
+                    Authorization: apiKey
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("proj details is: ", data);
+                    esIndex = data["businessEntity"]["indexName"]
+                },
+                error: function (error) {
+                    alert(error);
+                    return;
+                },
+            });
+            return esIndex
+        }
+
+        function getDocumentTypes(projectId, apiKey) {
+            let documentTypes = []
+            $.ajax({
+                async: false,
+                url: "http://localhost:8886/api/listDocumentTypes?projectId=" + projectId,
+                headers: {
+                    Authorization: apiKey
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("document types are: ", data);
+                    documentTypes = data
+                },
+                error: function (error) {
+                    alert(error);
+                    return;
+                },
+            });
+            return documentTypes
+        }
+
+        function renderWorkflowButtons(documentTypes) {
+            documentTypes.forEach(docType => {
+                $("#buttons-container").append(`<button id='${docType["id"]}' class='workflow-btn btn btn-primary'>${docType["name"]}</button>`)
+            });
+        }       
+
+        function getForm(docTypeId) {
+            $.ajax({
+                async: false,
+                url: "http://localhost:8886/Api/GetForm?documentTypeId=" + docTypeId,
+                headers: {
+                    Authorization: apiKey,
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("data is", data);
+                    formRes = JSON.parse(data.formDesigner);
+                    console.log("form response is: ", formRes);
+                    formRes.components.push({
+                        type: "button",
+                        action: "submit",
+                        label: "Submit",
+                        theme: "primary",
+                    });
+                    Formio.icons = "fontawesome";
+                    Formio.createForm(document.getElementById("formio"), formRes).then(function (
+                        form
+                    ) {
+                        form.nosubmit = true;
+                        form.on("submit", function (submission) {
+                            delete submission.data["submit"];
+                            console.log("submission is: ", submission);
+                            startWorkflow(submission, esIndex, apiKey, docTypeId);
+                        });
+                    });
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+            });
+
+            $(this).hide();
+
+            $("#save-and-send").show();
+        }
+
+        function startWorkflow(submission, indexName, apiKey, documentTypeId) {
+            var selectedEmps = JSON.parse(sessionStorage.getItem("selectedRows"));
+            console.log("selectedddddddddddddd", selectedEmps)
+            if (sessionStorage.getItem("selectedRows") == [] || sessionStorage.getItem("selectedRows") == '[]') {
+                alert("no employees were selected");
+                return;
+            }
+            console.log("selected emps: ", selectedEmps);
+            var fd = new FormData();
+            fd.set("DocumentTypeId", documentTypeId);
+            fd.append("FormData", JSON.stringify(submission.data));
+            fd.append("IndexName",indexName);
+            for (var i = 0; i < selectedEmps.length; i++) {
+                fd.append("DataIds", selectedEmps[i]);
+            }
+
+            console.log("data ids: ", ...fd);
+
+            $.ajax({
+                url: "http://localhost:8886/Api/StartWorkFlow",
+                data: fd,
+                headers: {
+                    Authorization: apiKey,
+                },
+                enctype: "multipart/form-data",
+                contentType: false,
+                method: "POST",
+                processData: false,
+                success: function (data) {
+                    alert(data);
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+            });
+        }
+    });
+</script>

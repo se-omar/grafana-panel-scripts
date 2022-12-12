@@ -1,0 +1,75 @@
+<button id="show-panel" style="width: 99%; height: 99%" class="btn btn-primary">Show Formio Panel</button>
+
+<script>
+    $(document).ready(function () {
+        const apiKey =
+            "Bearer eyJrIjoiMW1IbjQ0ejJrN2phZHc0OFJtQlpGU0w0aTNPVDVNTzQiLCJuIjoidGVzdC1rZXkyIiwiaWQiOjF9";
+
+        let dashboardJson = {}
+        let folderId = 0;
+        let folderUid = '';
+        let folderTitle = "";
+
+        $("#show-panel").click(getDashboardJson);
+
+        function getDashboardJson() {
+            let dbUid = "gq5xcbdVk"
+            $.ajax({
+                async: false,
+                url: "http://localhost/api/dashboards/uid/"+dbUid,
+                headers: {
+                    Authorization: apiKey,
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("data is", data);
+                    dashboardJson = data["dashboard"]
+                    folderId = data["meta"]["folderId"]
+                    folderUid = data["meta"]["folderUid"]
+                    folderTitle = data["meta"]["folderTitle"]
+                    sessionStorage.setItem("folderId", folderId)
+                    sessionStorage.setItem("folderUid", folderUid)
+                    sessionStorage.setItem("folderTitle", folderTitle)
+                    resizePanel(10, 10, folderId, folderUid, dashboardJson)
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+            });
+        }
+
+
+        function resizePanel(w, h) {
+             dashboardJson["panels"][0]["gridPos"]["w"] = w
+             dashboardJson["panels"][0]["gridPos"]["h"] = h
+
+            let reqJson = {
+                folderId: folderId,
+                folderUid: folderUid,
+                dashboard: dashboardJson
+            }
+            console.log(reqJson)
+                $.ajax({
+                    async: false,
+                    url: "http://localhost/api/dashboards/db",
+                    data: JSON.stringify(reqJson),
+                    contentType: "application/json",
+                    dataType: "json",
+                    headers: {
+                        Authorization: apiKey,
+                        Accept: "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    method: "POST",
+                    success: function (data) {
+                        console.log(data);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    },
+                });
+        }
+
+    });
+
+</script>
