@@ -9,7 +9,6 @@
         margin-top: 5px;
         margin-bottom: 15px;
         width: 100%;
-        
     }
     /* .form-control:focus {
         border: solid 1px #1abc9c;
@@ -32,9 +31,9 @@
         position: fixed; /* Stay in place */
         z-index: 1; /* Sit on top */
         left: 0;
-        top: 0;
+        top: 100px;
         width: 100%; /* Full width */
-        height: 100%; /* Full height */
+        /* height: 100%; Full height */
         overflow: auto; /* Enable scroll if needed */
         background-color: rgba(0, 0, 0, 0.4);
     }
@@ -78,16 +77,22 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-        let apiKey = getIamToken();
-        console.log("api key is: ", apiKey);
+        let iamApiKey = getIamToken();
+        console.log("api key is: ", iamApiKey);
+        
+        const grafanaApiKey =
+            "Bearer eyJrIjoiMW1IbjQ0ejJrN2phZHc0OFJtQlpGU0w0aTNPVDVNTzQiLCJuIjoidGVzdC1rZXkyIiwiaWQiOjF9";
 
-        let projectId = getProjectId();
+        let currentFolder = getCurrentFolder();
+        console.log("current folder is", currentFolder)
+
+        let projectId = getProjectId(currentFolder);
         console.log("projectId is: ", projectId);
 
         let esIndex = getEsIndex(projectId);
         console.log("indexName is: ", esIndex);
 
-        let documentTypes = getDocumentTypes(projectId, apiKey);
+        let documentTypes = getDocumentTypes(projectId, iamApiKey);
         console.log("document types 2 is", documentTypes);
 
         renderWorkflowButtons(documentTypes);
@@ -124,19 +129,44 @@
             return apiKey;
         }
 
-        function getProjectId() {
+        function getCurrentFolder() {
+            // for url: http://localhost:3000/d/gq5xcbdVk/employees-retention?orgId=1 get gq5xcbdVk
+            let dashboardUid = window.location.pathname.split("/")[2];
+            let currentFolder = {}
+            console.log("dashboard UID is: ", dashboardUid)
+
+            $.ajax({
+                async: false,
+                url: "http://localhost/api/dashboards/uid/" + dashboardUid,
+                headers: {
+                    Authorization: grafanaApiKey,
+                },
+                method: "GET",
+                success: function (data) {
+                    console.log("data is", data);
+                    dashboardJson = data["dashboard"];
+                    currentFolder = data["meta"]
+                },
+                error: function (error) {
+                    console.log(error);
+                },
+            });
+            return currentFolder
+        }
+
+        function getProjectId(currentFolder) {
             let projectId = 0;
 
             $.ajax({
                 async: false,
                 url: "http://localhost:8883/project/listprojects",
                 headers: {
-                    Authorization: apiKey,
+                    Authorization: iamApiKey,
                 },
                 method: "GET",
                 success: function (data) {
                     console.log("all projects are: ", data);
-                    let projectName = sessionStorage.getItem("folderTitle");
+                    let projectName = currentFolder["folderTitle"]
                     let project = data.find((o) => o.text === projectName);
                     console.log("project is", project);
                     projectId = project["id"];
@@ -155,7 +185,7 @@
                 async: false,
                 url: "http://localhost:8883/project/getDetails?projectId=" + projectId,
                 headers: {
-                    Authorization: apiKey,
+                    Authorization: iamApiKey,
                 },
                 method: "GET",
                 success: function (data) {
@@ -204,7 +234,7 @@
                 async: false,
                 url: "http://localhost:8886/Api/GetForm?documentTypeId=" + docTypeId,
                 headers: {
-                    Authorization: apiKey,
+                    Authorization: iamApiKey,
                 },
                 method: "GET",
                 success: function (data) {
@@ -225,7 +255,7 @@
                         form.on("submit", function (submission) {
                             delete submission.data["submit"];
                             console.log("submission is: ", submission);
-                            startWorkflow(submission, esIndex, apiKey, docTypeId);
+                            startWorkflow(submission, esIndex, iamApiKey, docTypeId);
                         });
                     });
                 },
@@ -285,12 +315,6 @@
 
         // Get the <span> element that closes the modal
         var span = document.getElementsByClassName("close")[0];
-
-        // When the user clicks on the button, open the modal
-        // btns[0].onclick = function () {
-        //     mainView[0].appendChild(modal);
-        //     modal.style.display = "block";
-        // };
 
         for (var i = 0; i < btns.length; i++) {
             btns[i].onclick = function () {
