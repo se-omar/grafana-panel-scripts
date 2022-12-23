@@ -26,25 +26,31 @@
     }
 
     /* The Modal (background) */
-    .modal {
-        display: none; /* Hidden by default */
-        position: fixed; /* Stay in place */
-        z-index: 1; /* Sit on top */
-        left: 0;
-        top: 100px;
-        width: 100%; /* Full width */
+    /* .modal { */
+        /* display: none; Hidden by default */
+        /* position: fixed; Stay in place */
+        /* z-index: 1; Sit on top */
+        /* left: 0; */
+        /* top: 100px; */
+        /* width: 100%; Full width */
         /* height: 100%; Full height */
-        overflow: auto; /* Enable scroll if needed */
-        background-color: rgba(0, 0, 0, 0.4);
-    }
+        /* overflow: auto; Enable scroll if needed */
+        /* background-color: rgba(0, 0, 0, 0.4); */
+        /* background-color: #fefefe; */
+    /* } */
 
     /* Modal Content/Box */
     .modal-content {
+        top: 10px;
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        overflow: auto; /* Enable scroll if needed */
         background-color: #fefefe;
         margin: 15% auto; /* 15% from the top and centered */
         padding: 20px;
-        border: 1px solid #888;
-        width: 80%; /* Could be more or less, depending on screen size */
+        /* border: 1px solid #888; */
+        width: 70%; /* Could be more or less, depending on screen size */
     }
 
     /* The Close Button */
@@ -66,14 +72,14 @@
 <div id="main">
     <div id="buttons-container"></div>
 </div>
-<div id="myModal" class="modal">
-    <div class="modal-content">
+<!-- <div id="myModal" class="modal"> -->
+    <div id="myModal" class="modal-content modal">
         <span class="close">&times;</span>
         <form>
             <div style="width: 80%" id="formio"></div>
         </form>
     </div>
-</div>
+<!-- </div> -->
 
 <script type="text/javascript">
     $(document).ready(function () {
@@ -110,7 +116,7 @@
 
             $.ajax({
                 async: false,
-                url: "http://localhost:8880/connect/token",
+                url: "http://iam.omar.com/connect/token",
                 data: reqBody,
                 // contentType: "application/json",
                 dataType: "json",
@@ -137,7 +143,7 @@
 
             $.ajax({
                 async: false,
-                url: "http://localhost/api/dashboards/uid/" + dashboardUid,
+                url: "http://grafana.omar.com:90/api/dashboards/uid/" + dashboardUid,
                 headers: {
                     Authorization: grafanaApiKey,
                 },
@@ -159,7 +165,7 @@
 
             $.ajax({
                 async: false,
-                url: "http://localhost:8883/project/listprojects",
+                url: "http://insight.omar.com/project/listprojects",
                 headers: {
                     Authorization: iamApiKey,
                 },
@@ -183,7 +189,7 @@
             let esIndex = "";
             $.ajax({
                 async: false,
-                url: "http://localhost:8883/project/getDetails?projectId=" + projectId,
+                url: "http://insight.omar.com/project/getDetails?projectId=" + projectId,
                 headers: {
                     Authorization: iamApiKey,
                 },
@@ -204,7 +210,7 @@
             let documentTypes = [];
             $.ajax({
                 async: false,
-                url: "http://localhost:8886/api/listDocumentTypes?projectId=" + projectId,
+                url: "http://caseintegration.omar.com/api/listDocumentTypes?projectId=" + projectId,
                 headers: {
                     Authorization: apiKey,
                 },
@@ -232,7 +238,7 @@
         function getForm(docTypeId) {
             $.ajax({
                 async: false,
-                url: "http://localhost:8886/Api/GetForm?documentTypeId=" + docTypeId,
+                url: "http://caseintegration.omar.com/Api/GetForm?documentTypeId=" + docTypeId,
                 headers: {
                     Authorization: iamApiKey,
                 },
@@ -269,6 +275,7 @@
             $("#save-and-send").show();
         }
 
+
         function startWorkflow(submission, indexName, apiKey, documentTypeId) {
             var selectedEmps = JSON.parse(sessionStorage.getItem("selectedRows"));
             console.log("selectedddddddddddddd", selectedEmps);
@@ -288,7 +295,7 @@
             console.log("data ids: ", ...fd);
 
             $.ajax({
-                url: "http://localhost:8886/Api/StartWorkFlow",
+                url: "http://caseintegration.omar.com/Api/StartWorkFlow",
                 data: fd,
                 headers: {
                     Authorization: apiKey,
@@ -298,7 +305,8 @@
                 method: "POST",
                 processData: false,
                 success: function (data) {
-                    alert(data);
+                    modal.style.display = "none";
+                    alert("Workflow Initiated, Reference number is: " + data);
                 },
                 error: function (error) {
                     console.log(error);
@@ -306,8 +314,8 @@
             });
         }
 
-        var modal = document.getElementById("myModal");
 
+        var modal = document.getElementById("myModal");
         var mainView = document.getElementsByClassName("react-grid-layout");
         // Get the button that opens the modal
         var btns = document.getElementsByClassName("workflow-btn");
