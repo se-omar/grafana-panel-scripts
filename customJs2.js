@@ -1,13 +1,44 @@
 
-
 function goTo(data, projectId,indexName) {
     let parsedData = JSON.parse(data)
     console.log("data parsed var is:", parsedData)
-    console.log("data var is:", parsedData["URL"])
     console.log("projectId var is:", projectId)
     console.log("index var is:", indexName)
-    // window.location.href = "https://google.com";
-    window.open("https://insight.intalio.ml/" + parsedData["URL"] + "?hide=true")
+
+    var iframe = $("<iframe  title='insight ml'></iframe>").attr("src", "https://insight.intalio.ml/" + parsedData["URL"] + "?hide=true").attr("title", "workingggg").css({
+        "height": "99%",
+        "width": "99%"
+    })
+
+    var div1 = $("<div></div>")
+    .addClass("modal fade bd-example-modal-lg")
+    .attr("tabindex", "-1")
+    .attr("role", "dialog")
+    .attr("id", "exampleModal")
+    .css({
+        "width": "99%",
+        "height": "99%"
+    })
+
+    var div2 = $("<div></div>")
+    .addClass("modal-dialog modal-lg")
+    .css({
+        "width": "99%",
+        "height": "99%"
+    })
+    var div3 = $("<div></div>")
+    .addClass("modal-content")
+    .css({
+        "width": "99%",
+        "height": "99%"
+    })
+
+    div3.append(iframe)
+    div2.append(div3)
+    div1.append(div2)
+    $(".wrapper").append(div1)
+
+    div1.modal('show')
 }
 
 function start(data, projectId,indexName)
