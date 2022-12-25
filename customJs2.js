@@ -16,21 +16,21 @@ function goTo(data, projectId,indexName) {
     .attr("role", "dialog")
     .attr("id", "exampleModal")
     .css({
-        "width": "99%",
-        "height": "99%"
+        "width": "80%",
+        "height": "80%"
     })
 
     var div2 = $("<div></div>")
     .addClass("modal-dialog modal-lg")
     .css({
-        "width": "99%",
-        "height": "99%"
+        "width": "80%",
+        "height": "80%"
     })
     var div3 = $("<div></div>")
     .addClass("modal-content")
     .css({
-        "width": "99%",
-        "height": "99%"
+        "width": "80%",
+        "height": "80%"
     })
 
     div3.append(iframe)

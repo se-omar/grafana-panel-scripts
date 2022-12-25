@@ -50,6 +50,17 @@
         margin: 15% auto;
         padding: 20px;
         width: 70%; 
+        transform:scale(1);
+        animation: blowUpModal .5s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
+    }
+
+    @keyframes blowUpModal {
+    0% {
+        transform:scale(0);
+    }
+    100% {
+        transform:scale(1);
+    }
     }
 
     /* The Close Button */
@@ -78,6 +89,12 @@
             <div style="width: 80%" id="formio"></div>
         </form>
     </div>
+
+
+    <div id="successModal" class="modal-content modal">
+        <span id="closeSuccessModal" class="close">&times;</span>
+        <h1 id="successMsg"></h1>
+    </div>
 <!-- </div> -->
 
 <script type="text/javascript">
@@ -86,7 +103,7 @@
         console.log("api key is: ", iamApiKey);
         
         const grafanaApiKey =
-            "Bearer eyJrIjoiMW1IbjQ0ejJrN2phZHc0OFJtQlpGU0w0aTNPVDVNTzQiLCJuIjoidGVzdC1rZXkyIiwiaWQiOjF9";
+            "Bearer eyJrIjoiaWZ3VEx4Q2hmRWhMdHhyNjFNdGJWUVBBelliMGJFSnEiLCJuIjoiYXBpIiwiaWQiOjF9";
 
         let currentFolder = getCurrentFolder();
         console.log("current folder is", currentFolder)
@@ -274,7 +291,6 @@
             $("#save-and-send").show();
         }
 
-
         function startWorkflow(submission, indexName, apiKey, documentTypeId) {
             var selectedEmps = JSON.parse(sessionStorage.getItem("selectedRows"));
             console.log("selectedddddddddddddd", selectedEmps);
@@ -305,7 +321,10 @@
                 processData: false,
                 success: function (data) {
                     modal.style.display = "none";
-                    alert("Workflow Initiated, Reference number is: " + data);
+                    // alert("Workflow Initiated, Reference number is: " + data);
+                    $("#successMsg").text("Workflow Initiated, Reference Number is: " + data)
+                    mainView[0].appendChild(successModal)
+                    successModal.style.display = "block";
                 },
                 error: function (error) {
                     console.log(error);
@@ -313,8 +332,8 @@
             });
         }
 
-
         var modal = document.getElementById("myModal");
+        var successModal = document.getElementById("successModal")
         var mainView = document.getElementsByClassName("react-grid-layout");
         // Get the button that opens the modal
         var btns = document.getElementsByClassName("workflow-btn");
@@ -322,6 +341,7 @@
 
         // Get the <span> element that closes the modal
         var span = document.getElementsByClassName("close")[0];
+        var closeSuccessModal = document.getElementById("closeSuccessModal")
 
         for (var i = 0; i < btns.length; i++) {
             btns[i].onclick = function () {
@@ -334,6 +354,10 @@
         // When the user clicks on <span> (x), close the modal
         span.onclick = function () {
             modal.style.display = "none";
+        };
+
+        closeSuccessModal.onclick = function () {
+            successModal.style.display = "none";
         };
 
         // When the user clicks anywhere outside of the modal, close it
